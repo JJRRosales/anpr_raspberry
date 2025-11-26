@@ -1,0 +1,23 @@
+{
+  "name": "anpr-raspberry",
+  "version": "0.1.0",
+  "dependencies": [
+    {
+      "name": "opencv4",
+      "default-features": false,
+      "features": [          
+        "ffmpeg",
+        "jpeg",
+        "png" ,         
+    "gstreamer"
+      ]
+    },
+    {
+      "name": "tesseract",
+      "default-features": false,
+      "features": [
+        "training-tools"
+      ]
+    }
+  ]
+}
