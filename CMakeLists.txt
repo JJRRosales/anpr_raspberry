@@ -30,7 +30,8 @@ find_package(aws-crt-cpp REQUIRED CONFIG)
 find_package(IotShadow-cpp REQUIRED CONFIG)
 find_package(IotCommands-cpp REQUIRED CONFIG)
 # C) TENSORFLOW LITE (Source Integration)
-# We disable the "Install" step that caused your errors
+include_directories(BEFORE "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src")
+
 set(TFLITE_ENABLE_INSTALL OFF CACHE BOOL "Disable TFLite install" FORCE)
 
 # We add the source directory directly. 
@@ -68,9 +69,9 @@ target_link_libraries(rpi_vision
     # Link TensorFlow Lite
     # When using add_subdirectory, the target name is exactly: tensorflow-lite
     tensorflow-lite
-    aws-crt-cpp::aws-crt-cpp         # Link the foundational client
-    IotShadow-cpp::IotShadow-cpp     # Link the Shadow service
-    IotCommands-cpp::IotCommands-cpp
+    aws-crt-cpp         # Link the foundational client
+    IotShadow-cpp     # Link the Shadow service
+    IotCommands-cpp
 )
 
 # -----------------------------------------------------------------------------
