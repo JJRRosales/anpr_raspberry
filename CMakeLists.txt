@@ -16,24 +16,60 @@ endif()
 
 # A) Vcpkg Dependencies
 find_package(OpenCV REQUIRED)
-find_package(Tesseract REQUIRED)
+find_package(Tesseract CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
 # B) AWS IoT Device SDK v2 (Manual Install)
-find_package(aws-crt-cpp REQUIRED CONFIG)
-find_package(IotShadow-cpp REQUIRED CONFIG)
-find_package(IotCommands-cpp REQUIRED CONFIG)
+set(AWS_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/aws-install")
 
-# C) TENSORFLOW LITE (Source Integration)
+find_library(AWS_CRT_CPP_LIB 
+    NAMES aws-crt-cpp
+    PATHS "${AWS_INSTALL_DIR}/lib"
+    REQUIRED
+)
 
+find_library(AWS_IOT_SHADOW_LIB
+    NAMES IotShadow-cpp
+    PATHS "${AWS_INSTALL_DIR}/lib"
+    REQUIRED
+)
+
+find_library(AWS_IOT_COMMANDS_LIB
+    NAMES IotCommands-cpp
+    PATHS "${AWS_INSTALL_DIR}/lib"
+    REQUIRED
+)
+
+find_library(AWS_IOT_JOBS_LIB
+    NAMES IotJobs-cpp
+    PATHS "${AWS_INSTALL_DIR}/lib"
+    REQUIRED
+)
+
+find_library(AWS_IOT_IDENTITY_LIB
+    NAMES IotIdentity-cpp
+    PATHS "${AWS_INSTALL_DIR}/lib"
+    REQUIRED
+)
+
+find_library(AWS_IOT_COMMON_LIB
+    NAMES IotDeviceCommon-cpp
+    PATHS "${AWS_INSTALL_DIR}/lib"
+    REQUIRED
+)
+
+set(AWS_IOT_INCLUDE_DIRS
+    "${AWS_INSTALL_DIR}/include"
+)
+
+# C) TENSORFLOW LITE 
 set(TF_SRC "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src")
 
-# 1. Import the Shared Library (.so) you built with Bazel
 add_library(libtflite SHARED IMPORTED)
 
 set_target_properties(libtflite PROPERTIES
-    # Point this to where Bazel put the output
     IMPORTED_LOCATION "${TF_SRC}/bazel-bin/tensorflow/lite/libtensorflowlite.so"
+    INTERFACE_INCLUDE_DIRECTORIES "${TF_SRC};${TF_SRC}/bazel-tensorflow_src/external/flatbuffers/include"
 )
 
 # -----------------------------------------------------------------------------
@@ -48,10 +84,7 @@ add_executable(rpi_vision
 # -----------------------------------------------------------------------------
 target_include_directories(rpi_vision PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${OpenCV_INCLUDE_DIRS}
-    ${Tesseract_INCLUDE_DIRS}
-    "${TF_SRC}"
-    "${TF_SRC}/bazel-tensorflow_src/external/flatbuffers/include"
+    ${AWS_IOT_INCLUDE_DIRS}
 )
 
 # -----------------------------------------------------------------------------
@@ -59,15 +92,21 @@ target_include_directories(rpi_vision PUBLIC
 # -----------------------------------------------------------------------------
 target_link_libraries(rpi_vision
     PRIVATE
-    ${OpenCV_LIBS}
-    libtesseract
-    Threads::Threads
-    tensorflow-lite
-    aws-crt-cpp         
-    IotShadow-cpp    
-    IotCommands-cpp
+    ${OpenCV_LIBS}          
+    Tesseract::libtesseract
+    Threads::Threads         
+    libtflite                
+    ${AWS_CRT_CPP_LIB}
+    ${AWS_IOT_SHADOW_LIB}
+    ${AWS_IOT_COMMANDS_LIB}
+    ${AWS_IOT_JOBS_LIB}
+    ${AWS_IOT_IDENTITY_LIB}
+    ${AWS_IOT_COMMON_LIB}
 )
 
+target_link_directories(rpi_vision PRIVATE
+    "${AWS_INSTALL_DIR}/lib"
+)
 # -----------------------------------------------------------------------------
 # 6. INSTALL
 # -----------------------------------------------------------------------------

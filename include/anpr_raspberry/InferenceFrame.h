@@ -2,8 +2,8 @@
 #include <opencv2/opencv.hpp>
 
 struct InferenceFrame {
-    cv::Mat image;
+    cv::Mat originalFrame;
     cv::Rect boundingBox;
     int classId;
     float confidence;
-}
+};

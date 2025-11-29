@@ -14,103 +14,12 @@
 // Global vars
 FrameBuffer processingBuffer(30);
 std::atomic<bool> keepRunning = true;
+std::unique_ptr<tflite::Interpreter> interpreter;
 
 // model params
 const int MODEL_WIDTH = 640;
 const int MODEL_HEIGHT = 480;
 const char* MODEL_PATH = "/model/model.tflite";
-
-// --- THREAD 1: CAPTURE & INFERENCE ---
-void captureAndInferenceThread(int width, int height) {
-    cv::VideoCapture cap(0); 
-    if (!cap.isOpened()) {
-        std::cerr << "Error: Could not open camera" << std::endl;
-        return;
-    }
-
-    cv::Mat frame;
-
-    while (keepRunning) {
-        cap >> frame; 
-        if (frame.empty()) {
-            std::cerr << "Warning: Empty frame received" << std::endl;
-            continue;
-        }
-
-        cv::Mat resized;
-        cv::resize(frame, resized, cv::Size(width, height));
-
-        
-        
-        cv::Rect detectedBox;
-        float confidence = 0.0f;
-        bool objectDetected = runInference(interpreter, frame, detectedBox, confidence);
-
-        if (objectDetected && confidence > 0.5f) {
-            InferenceFrame result;
-            result.originalFrame = frame.clone(); 
-            result.boundingBox = detectedBox;
-            result.classId = 1;
-            result.confidence = confidence;
-            
-            // Push to buffer with error handling
-            if (!processingBuffer.push(result)) {
-                std::cerr << "Warning: Buffer full, dropping frame with confidence: " 
-                         << confidence << std::endl;
-            } else {
-                std::cout << "Pushed frame with detection confidence: " 
-                         << confidence << std::endl;
-            }
-        }
-        
-        // std::this_thread::sleep_for(std::chrono::milliseconds(33));
-    }
-}
-
-// --- THREAD 2: OCR & CLOUD UPLOAD ---
-void ocrAndUploadThread() {
-    // Setup OCR Engine (Tesseract would go here)
-    // Setup AWS IoT SDK would go here
-
-    std::cout << "OCR thread started" << std::endl;
-    
-    while (keepRunning) {
-        try {
-            InferenceFrame data;
-            if (processingBuffer.pop(data, std::chrono::milliseconds(100))) {
-                
-                // Ensure bounding box is within image bounds
-                cv::Rect validBox = data.boundingBox & 
-                    cv::Rect(0, 0, data.originalFrame.cols, data.originalFrame.rows);
-                
-                if (validBox.area() > 0) {
-                    // Crop the region of interest
-                    cv::Mat roi = data.originalFrame(validBox);
-                    
-                    // TODO: Run OCR on 'roi'
-                    std::string text = "ABC123"; // Replace with actual OCR
-                    float ocrConfidence = 0.95f; // Replace with actual confidence
-                    
-                    std::cout << "Detected: " << text << " with confidence: " 
-                             << ocrConfidence << std::endl;
-
-                    // Filter by confidence and upload
-                    if (ocrConfidence > 0.80f) {
-                        std::cout << "High confidence (" << ocrConfidence 
-                                 << "). Would upload to AWS: " << text << std::endl;
-                        // TODO: Call AWS IoT MQTT Publish
-                    } else {
-                        std::cout << "Low OCR confidence. Discarding: " << text << std::endl;
-                    }
-                } else {
-                    std::cerr << "Warning: Invalid bounding box" << std::endl;
-                }
-            }
-        } catch (const std::exception& e) {
-            std::cerr << "Error in OCR thread: " << e.what() << std::endl;
-        }
-    }
-}
 
 std::unique_ptr<tflite::Interpreter> loadModelAndCreateInterpreter(const char* model_path) {
     // 1. Load the model
@@ -185,13 +94,91 @@ bool runInference(tflite::Interpreter* interpreter, const cv::Mat& input,
     return false;
 }
 
+// --- THREAD 1: CAPTURE & INFERENCE ---
+void captureAndInferenceThread(int width, int height) {
+    cv::VideoCapture cap(0); 
+    if (!cap.isOpened()) {
+        std::cerr << "Error: Could not open camera" << std::endl;
+        return;
+    }
 
+    cv::Mat frame;
 
+    while (keepRunning) {
+        cap >> frame; 
+        if (frame.empty()) {
+            std::cerr << "Warning: Empty frame received" << std::endl;
+            continue;
+        }
+
+        cv::Mat resized;
+        cv::resize(frame, resized, cv::Size(width, height));
+     
+        cv::Rect detectedBox;
+        float confidence = 0.0f;
+        bool objectDetected = runInference(interpreter.get(), frame, detectedBox, confidence);
+
+        if (objectDetected && confidence > 0.5f) {
+            InferenceFrame result;
+            result.originalFrame = frame.clone(); 
+            result.boundingBox = detectedBox;
+            result.classId = 1;
+            result.confidence = confidence;
+        }
+        
+        // std::this_thread::sleep_for(std::chrono::milliseconds(33));
+    }
+}
+
+// --- THREAD 2: OCR & CLOUD UPLOAD ---
+void ocrAndUploadThread() {
+    // Setup OCR Engine (Tesseract would go here)
+    // Setup AWS IoT SDK would go here
+
+    std::cout << "OCR thread started" << std::endl;
+    
+    while (keepRunning) {
+        try {
+            InferenceFrame data;
+            if (processingBuffer.popFrame(data, std::chrono::milliseconds(100))) {
+                
+                // Ensure bounding box is within image bounds
+                cv::Rect validBox = data.boundingBox & 
+                    cv::Rect(0, 0, data.originalFrame.cols, data.originalFrame.rows);
+                
+                if (validBox.area() > 0) {
+                    // Crop the region of interest
+                    cv::Mat roi = data.originalFrame(validBox);
+                    
+                    // TODO: Run OCR on 'roi'
+                    std::string text = "ABC123"; // Replace with actual OCR
+                    float ocrConfidence = 0.95f; // Replace with actual confidence
+                    
+                    std::cout << "Detected: " << text << " with confidence: " 
+                             << ocrConfidence << std::endl;
+
+                    // Filter by confidence and upload
+                    if (ocrConfidence > 0.80f) {
+                        std::cout << "High confidence (" << ocrConfidence 
+                                 << "). Would upload to AWS: " << text << std::endl;
+                        // TODO: Call AWS IoT MQTT Publish
+                    } else {
+                        std::cout << "Low OCR confidence. Discarding: " << text << std::endl;
+                    }
+                } else {
+                    std::cerr << "Warning: Invalid bounding box" << std::endl;
+                }
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Error in OCR thread: " << e.what() << std::endl;
+        }
+    }
+}
 
 int main() {
     
     // load model
-    auto interpreter = loadModelAndCreateInterpreter();
+    interpreter = loadModelAndCreateInterpreter(MODEL_PATH);
     
     if (!interpreter) {
         std::cerr << "Failed to load model. Exiting." << std::endl;
@@ -201,7 +188,7 @@ int main() {
     std::cerr << "Model loaded succesfully." << std::endl;
 
     // Start threads
-    std::thread t1(captureAndInferenceThread);
+    std::thread t1(captureAndInferenceThread, MODEL_WIDTH, MODEL_HEIGHT);
     std::thread t2(ocrAndUploadThread);
 
     std::cout << "Pipeline running. Press Enter to stop." << std::endl;

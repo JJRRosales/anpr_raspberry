@@ -32,13 +32,12 @@ class FrameBuffer {
         }
 
 
-        bool popFrame(InferenceFrame& frame, std::chrono::milliseconds timeout) {
+        InferenceFrame popFrame() {
             std::unique_lock<std::mutex> lock(mtx);
-            if (condVar.wait_for(lock, timeout, [this] { return !buffer.empty(); })) {
-                frame = buffer.front();
-                buffer.pop_front();
-                return true;
-            }
-            return false;
+            condVar.wait(lock, [this] { return !buffer.empty(); });
+            
+            InferenceFrame frame = buffer.front();
+            buffer.pop_front();
+            return frame;
         }
-};
+}

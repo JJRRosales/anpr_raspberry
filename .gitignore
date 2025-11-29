@@ -3,3 +3,6 @@
 /certs/
 /dependencies/
 /build/
+/models/
+/CMakeFiles/
+CMakeCache.txt
