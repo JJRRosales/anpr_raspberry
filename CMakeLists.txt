@@ -30,9 +30,15 @@ find_package(aws-crt-cpp REQUIRED CONFIG)
 find_package(IotShadow-cpp REQUIRED CONFIG)
 find_package(IotCommands-cpp REQUIRED CONFIG)
 # C) TENSORFLOW LITE (Source Integration)
-include_directories(BEFORE "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src")
+
+set(TENSORFLOW_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src" CACHE PATH "" FORCE)
+set(TFLITE_USE_SYSTEM_XNNPACK OFF CACHE BOOL "Force TFLite to build XNNPACK from source." FORCE)
+set(TFLITE_DOWNLOAD_TENSORFLOW_SOURCE OFF CACHE BOOL "Disable downloading of the TENSORFLOW source repo." FORCE)
+set(TFLITE_EXTERNAL_SOURCE_REPOSITORY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src" CACHE PATH "" FORCE)
 
 set(TFLITE_ENABLE_INSTALL OFF CACHE BOOL "Disable TFLite install" FORCE)
+
+include_directories(BEFORE "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src")
 
 # We add the source directory directly. 
 # Make sure this path points to 'tensorflow/lite' inside your source folder.
