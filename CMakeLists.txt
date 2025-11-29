@@ -26,15 +26,16 @@ find_package(IotCommands-cpp REQUIRED CONFIG)
 
 # C) TENSORFLOW LITE (Source Integration)
 
-include_directories(BEFORE "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src")
+set(TF_SRC "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src")
 
-# -----------------------------------------------------------------------------
-# 2. Configure TFLite to use LOCAL TF Source but DOWNLOAD dependencies
-# -----------------------------------------------------------------------------
-set(TENSORFLOW_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src" CACHE PATH "" FORCE)
-set(TFLITE_DOWNLOAD_TENSORFLOW_SOURCE OFF CACHE BOOL "Disable downloading of the TENSORFLOW source repo." FORCE)
-set(TFLITE_ENABLE_INSTALL OFF CACHE BOOL "Disable TFLite install" FORCE)
-add_subdirectory(dependencies/tensorflow_src/tensorflow/lite)
+# 1. Import the Shared Library (.so) you built with Bazel
+add_library(libtflite SHARED IMPORTED)
+
+set_target_properties(libtflite PROPERTIES
+    # Point this to where Bazel put the output
+    IMPORTED_LOCATION "${TF_SRC}/bazel-bin/tensorflow/lite/libtensorflowlite.so"
+)
+
 # -----------------------------------------------------------------------------
 # 3. BUILD TARGET
 # -----------------------------------------------------------------------------
@@ -48,6 +49,8 @@ add_executable(rpi_vision
 target_include_directories(rpi_vision PRIVATE
     ${OpenCV_INCLUDE_DIRS}
     ${Tesseract_INCLUDE_DIRS}
+    "${TF_SRC}"
+    "${TF_SRC}/bazel-tensorflow_src/external/flatbuffers/include"
     # TFLite handles its own includes via the target below
 )
 
