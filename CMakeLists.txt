@@ -20,30 +20,21 @@ find_package(Tesseract REQUIRED)
 find_package(Threads REQUIRED)
 
 # B) AWS IoT Device SDK v2 (Manual Install)
-# We assume you still have the AWS SDK installed in C:/cpp_sdk_install from before.
-# If you deleted it, you will need to rebuild AWS SDK or add_subdirectory for it too.
-#find_package(aws-iot-device-sdk-cpp-v2 REQUIRED)
-# Find the foundational C++ common runtime
 find_package(aws-crt-cpp REQUIRED CONFIG)
-
-# Find the specific IoT services you need (e.g., Shadow and Commands)
 find_package(IotShadow-cpp REQUIRED CONFIG)
 find_package(IotCommands-cpp REQUIRED CONFIG)
+
 # C) TENSORFLOW LITE (Source Integration)
-
-set(TENSORFLOW_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src" CACHE PATH "" FORCE)
-set(TFLITE_USE_SYSTEM_XNNPACK OFF CACHE BOOL "Force TFLite to build XNNPACK from source." FORCE)
-set(TFLITE_DOWNLOAD_TENSORFLOW_SOURCE OFF CACHE BOOL "Disable downloading of the TENSORFLOW source repo." FORCE)
-set(TFLITE_EXTERNAL_SOURCE_REPOSITORY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src" CACHE PATH "" FORCE)
-
-set(TFLITE_ENABLE_INSTALL OFF CACHE BOOL "Disable TFLite install" FORCE)
 
 include_directories(BEFORE "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src")
 
-# We add the source directory directly. 
-# Make sure this path points to 'tensorflow/lite' inside your source folder.
+# -----------------------------------------------------------------------------
+# 2. Configure TFLite to use LOCAL TF Source but DOWNLOAD dependencies
+# -----------------------------------------------------------------------------
+set(TENSORFLOW_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src" CACHE PATH "" FORCE)
+set(TFLITE_DOWNLOAD_TENSORFLOW_SOURCE OFF CACHE BOOL "Disable downloading of the TENSORFLOW source repo." FORCE)
+set(TFLITE_ENABLE_INSTALL OFF CACHE BOOL "Disable TFLite install" FORCE)
 add_subdirectory(dependencies/tensorflow_src/tensorflow/lite)
-
 # -----------------------------------------------------------------------------
 # 3. BUILD TARGET
 # -----------------------------------------------------------------------------
@@ -68,15 +59,9 @@ target_link_libraries(rpi_vision
     ${OpenCV_LIBS}
     libtesseract
     Threads::Threads
-    
-    # Link AWS
-    #AWS::aws-iot-device-sdk-cpp-v2
-    
-    # Link TensorFlow Lite
-    # When using add_subdirectory, the target name is exactly: tensorflow-lite
     tensorflow-lite
-    aws-crt-cpp         # Link the foundational client
-    IotShadow-cpp     # Link the Shadow service
+    aws-crt-cpp         
+    IotShadow-cpp    
     IotCommands-cpp
 )
 
