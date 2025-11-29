@@ -46,12 +46,12 @@ add_executable(rpi_vision
 # -----------------------------------------------------------------------------
 # 4. INCLUDE DIRECTORIES
 # -----------------------------------------------------------------------------
-target_include_directories(rpi_vision PRIVATE
+target_include_directories(rpi_vision PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${OpenCV_INCLUDE_DIRS}
     ${Tesseract_INCLUDE_DIRS}
     "${TF_SRC}"
     "${TF_SRC}/bazel-tensorflow_src/external/flatbuffers/include"
-    # TFLite handles its own includes via the target below
 )
 
 # -----------------------------------------------------------------------------
