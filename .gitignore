@@ -1,9 +1,67 @@
-.vs
-.vscode
-/certs/
-/dependencies/
-/build/
-/model/
-/CMakeFiles/
-/config/
+# =============================================
+# Build System
+# =============================================
+build/
+CMakeFiles/
 CMakeCache.txt
+cmake_install.cmake
+*.ninja
+*.ninja_deps
+*.so
+*.a
+*.lib
+
+# =============================================
+# Dependencies (if downloaded/built)
+# =============================================
+dependencies/
+
+# =============================================
+# Configuration & Certificates
+# =============================================
+# Ignore local config files but keep template
+config/*.local.env
+config/*.env
+!config/*.env.example
+!config/.gitkeep
+
+# Ignore certificate contents
+certs/*
+!certs/.gitkeep
+
+# =============================================
+# Model Files (usually large)
+# =============================================
+model/*
+!model/.gitkeep
+*.tflite
+*.pb
+
+# =============================================
+# IDE and Editor
+# =============================================
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# =============================================
+# OS Generated
+# =============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# =============================================
+# Logs and Temporary Files
+# =============================================
+*.log
+logs/
+*.tmp
+*.temp
