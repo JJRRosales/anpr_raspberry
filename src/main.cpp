@@ -16,10 +16,24 @@ FrameBuffer processingBuffer(30);
 std::atomic<bool> keepRunning = true;
 std::unique_ptr<tflite::Interpreter> interpreter;
 
-// model params
 const int MODEL_WIDTH = 640;
 const int MODEL_HEIGHT = 480;
-const char* MODEL_PATH = "/model/model.tflite";
+const char* getModelPath();
+const char* MODEL_PATH = getModelPath();
+
+const char* getModelPath() {
+    const char* env_path = std::getenv("ANPR_MODEL_PATH");
+    
+    if (env_path != nullptr) {
+        return env_path;
+    } else {
+        std::cerr << "--- CRITICAL ERROR ---" << std::endl;
+        std::cerr << "The environment variable ANPR_MODEL_PATH is not set." << std::endl;
+        std::cerr << "Please set ANPR_MODEL_PATH to the full path of the model file (e.g., /path/to/model.tflite)." << std::endl;
+        std::cerr << "----------------------" << std::endl;
+        std::exit(EXIT_FAILURE); 
+    }
+}
 
 std::unique_ptr<tflite::Interpreter> loadModelAndCreateInterpreter(const char* model_path) {
     // 1. Load the model
