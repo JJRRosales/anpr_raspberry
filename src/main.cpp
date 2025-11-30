@@ -18,10 +18,10 @@ std::atomic<bool> keepRunning = true;
 std::unique_ptr<tflite::Interpreter> interpreter;
 
 
-std::unique_ptr<tflite::Interpreter> loadModelAndCreateInterpreter(const char* model_path) {
+std::unique_ptr<tflite::Interpreter> loadModelAndCreateInterpreter(const std::string& model_path) {
     // 1. Load the model
     std::unique_ptr<tflite::FlatBufferModel> model = 
-        tflite::FlatBufferModel::BuildFromFile(model_path);
+        tflite::FlatBufferModel::BuildFromFile(model_path.c_str());
     
     if (!model) {
         std::cerr << "Failed to load model: " << model_path << std::endl;
