@@ -77,6 +77,7 @@ set_target_properties(libtflite PROPERTIES
 # -----------------------------------------------------------------------------
 add_executable(rpi_vision
     src/main.cpp
+    src/Config.cpp
 )
 
 # -----------------------------------------------------------------------------

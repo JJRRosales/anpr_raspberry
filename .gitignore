@@ -5,4 +5,5 @@
 /build/
 /model/
 /CMakeFiles/
+/config/
 CMakeCache.txt

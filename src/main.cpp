@@ -8,32 +8,15 @@
 #include <memory>
 #include "anpr_raspberry/FrameBuffer.h"
 #include "anpr_raspberry/InferenceFrame.h"
+#include "anpr_raspberry/Config.h"
 
 
 
 // Global vars
-FrameBuffer processingBuffer(30);
+FrameBuffer processingBuffer(Config::FRAME_BUFFER_SIZE);
 std::atomic<bool> keepRunning = true;
 std::unique_ptr<tflite::Interpreter> interpreter;
 
-const int MODEL_WIDTH = 640;
-const int MODEL_HEIGHT = 480;
-const char* getModelPath();
-const char* MODEL_PATH = getModelPath();
-
-const char* getModelPath() {
-    const char* env_path = std::getenv("ANPR_MODEL_PATH");
-    
-    if (env_path != nullptr) {
-        return env_path;
-    } else {
-        std::cerr << "--- CRITICAL ERROR ---" << std::endl;
-        std::cerr << "The environment variable ANPR_MODEL_PATH is not set." << std::endl;
-        std::cerr << "Please set ANPR_MODEL_PATH to the full path of the model file (e.g., /path/to/model.tflite)." << std::endl;
-        std::cerr << "----------------------" << std::endl;
-        std::exit(EXIT_FAILURE); 
-    }
-}
 
 std::unique_ptr<tflite::Interpreter> loadModelAndCreateInterpreter(const char* model_path) {
     // 1. Load the model
@@ -192,7 +175,7 @@ void ocrAndUploadThread() {
 int main() {
     
     // load model
-    interpreter = loadModelAndCreateInterpreter(MODEL_PATH);
+    interpreter = loadModelAndCreateInterpreter(Config::MODEL_PATH);
     
     if (!interpreter) {
         std::cerr << "Failed to load model. Exiting." << std::endl;
@@ -202,7 +185,7 @@ int main() {
     std::cerr << "Model loaded succesfully." << std::endl;
 
     // Start threads
-    std::thread t1(captureAndInferenceThread, MODEL_WIDTH, MODEL_HEIGHT);
+    std::thread t1(captureAndInferenceThread, Config::MODEL_WIDTH, Config::MODEL_HEIGHT);
     std::thread t2(ocrAndUploadThread);
 
     std::cout << "Pipeline running. Press Enter to stop." << std::endl;
