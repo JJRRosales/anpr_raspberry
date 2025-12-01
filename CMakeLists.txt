@@ -42,7 +42,7 @@ set_target_properties(libtflite PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES
         "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src"
         "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src/tensorflow"
-        "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src/third_party/flatbuffers/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src/bazel-tensorflow_src/external/flatbuffers/include"
 )
 
 
