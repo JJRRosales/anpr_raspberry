@@ -79,6 +79,6 @@ install(FILES ${AWS_LIBS} DESTINATION .)
 install(FILES "${TFLITE_LIB}" DESTINATION .)
 # VCPK install
 # Install vcpkg-managed libraries
-install(DIRECTORY "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/"
+install(DIRECTORY "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/"
         DESTINATION lib
         FILES_MATCHING PATTERN "*.so*")
