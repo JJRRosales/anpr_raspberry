@@ -40,10 +40,9 @@ add_library(libtflite SHARED IMPORTED)
 set_target_properties(libtflite PROPERTIES
     IMPORTED_LOCATION "${TFLITE_LIB}"
     INTERFACE_INCLUDE_DIRECTORIES
-        "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src"
-        "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src/tensorflow"
-        "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src/bazel-tensorflow_src/external/flatbuffers/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src;${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src/bazel-tensorflow_src/external/flatbuffers/include"
 )
+
 
 
 # -----------------------------------------------------------------------------
@@ -78,3 +77,8 @@ install(TARGETS rpi_vision DESTINATION .)
 file(GLOB AWS_LIBS "${AWS_INSTALL_DIR}/lib/*.so*")
 install(FILES ${AWS_LIBS} DESTINATION .)
 install(FILES "${TFLITE_LIB}" DESTINATION .)
+# VCPK install
+# Install vcpkg-managed libraries
+install(DIRECTORY "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/"
+        DESTINATION lib
+        FILES_MATCHING PATTERN "*.so*")

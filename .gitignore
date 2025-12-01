@@ -2,6 +2,7 @@
 # Build System
 # =============================================
 build/
+deploy/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
