@@ -32,7 +32,6 @@ find_library(AWS_IOT_SHADOW_LIB NAMES IotShadow-cpp PATHS "${AWS_INSTALL_DIR}/li
 find_library(AWS_IOT_COMMANDS_LIB NAMES IotCommands-cpp PATHS "${AWS_INSTALL_DIR}/lib" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
 find_library(AWS_IOT_JOBS_LIB NAMES IotJobs-cpp PATHS "${AWS_INSTALL_DIR}/lib" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
 find_library(AWS_IOT_IDENTITY_LIB NAMES IotIdentity-cpp PATHS "${AWS_INSTALL_DIR}/lib" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
-find_library(AWS_IOT_COMMON_LIB NAMES IotDeviceCommon-cpp PATHS "${AWS_INSTALL_DIR}/lib" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
 
 
 # TFLite
@@ -65,7 +64,6 @@ target_link_libraries(rpi_vision PRIVATE
     ${AWS_IOT_COMMANDS_LIB}
     ${AWS_IOT_JOBS_LIB}
     ${AWS_IOT_IDENTITY_LIB}
-    ${AWS_IOT_COMMON_LIB}
 )
 
 # -----------------------------------------------------------------------------
