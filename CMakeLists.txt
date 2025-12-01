@@ -19,11 +19,11 @@ find_package(Threads REQUIRED)
 if(CMAKE_CROSSCOMPILING)
     message(STATUS "Configuring for RASPBERRY PI (Cross-Compile)")
     set(AWS_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/aws-install-rpi") 
-    set(TF_BAZEL_BIN    "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src/bazel-bin-rpi") 
+    set(TFLITE_LIB "${CMAKE_SOURCE_DIR}/dependencies/tflite/aarch64/libtensorflowlite.so") 
 else()
     message(STATUS "Configuring for LOCAL HOST (x64)")
     set(AWS_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/aws-install")
-    set(TF_BAZEL_BIN    "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src/bazel-bin")
+    set(TFLITE_LIB "${CMAKE_SOURCE_DIR}/dependencies/tflite/x86_64/libtensorflowlite.so")
 endif()
 
 # AWS Libs
@@ -38,9 +38,13 @@ find_library(AWS_IOT_COMMON_LIB NAMES IotDeviceCommon-cpp PATHS "${AWS_INSTALL_D
 # TFLite
 add_library(libtflite SHARED IMPORTED)
 set_target_properties(libtflite PROPERTIES
-    IMPORTED_LOCATION "${TF_BAZEL_BIN}/tensorflow/lite/libtensorflowlite.so"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src"
+    IMPORTED_LOCATION "${TFLITE_LIB}"
+    INTERFACE_INCLUDE_DIRECTORIES
+        "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src/tensorflow"
+        "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src/third_party/flatbuffers/include"
 )
+
 
 # -----------------------------------------------------------------------------
 # 2. BUILD TARGET
@@ -73,9 +77,4 @@ install(TARGETS rpi_vision DESTINATION .)
 # B. Manual Libs (AWS + TFLite)
 file(GLOB AWS_LIBS "${AWS_INSTALL_DIR}/lib/*.so*")
 install(FILES ${AWS_LIBS} DESTINATION .)
-install(FILES "${TF_BAZEL_BIN}/tensorflow/lite/libtensorflowlite.so" DESTINATION .)
-# C. VCPKG Libs (OpenCV/Tesseract)
-install(DIRECTORY "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/"
-        DESTINATION .
-        FILES_MATCHING PATTERN "*.so*"
-)
+install(FILES "${TFLITE_LIB}" DESTINATION .)
