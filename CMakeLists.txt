@@ -1,102 +1,62 @@
 cmake_minimum_required(VERSION 3.16)
 project(anpr_raspberry LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# =========================================================
+#  DEPLOYMENT CONFIGURATION
+# =========================================================
+set(CMAKE_INSTALL_RPATH "$ORIGIN")
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
 # -----------------------------------------------------------------------------
-# 1. VCPKG SETUP
+# 1. FIND PACKAGES
 # -----------------------------------------------------------------------------
-if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
-endif()
-
-# -----------------------------------------------------------------------------
-# 2. FIND PACKAGES
-# -----------------------------------------------------------------------------
-
-# A) Vcpkg Dependencies
+# VCPKG libs
 find_package(OpenCV REQUIRED)
 find_package(Tesseract CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
-# B) AWS IoT Device SDK v2 (Manual Install)
-set(AWS_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/aws-install")
+# Setup Paths for Manual Libs
+if(CMAKE_CROSSCOMPILING)
+    message(STATUS "Configuring for RASPBERRY PI (Cross-Compile)")
+    set(AWS_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/aws-install-rpi") 
+    set(TF_BAZEL_BIN    "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src/bazel-bin-rpi") 
+else()
+    message(STATUS "Configuring for LOCAL HOST (x64)")
+    set(AWS_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/aws-install")
+    set(TF_BAZEL_BIN    "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src/bazel-bin")
+endif()
 
-find_library(AWS_CRT_CPP_LIB 
-    NAMES aws-crt-cpp
-    PATHS "${AWS_INSTALL_DIR}/lib"
-    REQUIRED
+# AWS Libs
+find_library(AWS_CRT_CPP_LIB NAMES aws-crt-cpp PATHS "${AWS_INSTALL_DIR}/lib" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
+find_library(AWS_IOT_SHADOW_LIB NAMES IotShadow-cpp PATHS "${AWS_INSTALL_DIR}/lib" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
+find_library(AWS_IOT_COMMANDS_LIB NAMES IotCommands-cpp PATHS "${AWS_INSTALL_DIR}/lib" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
+find_library(AWS_IOT_JOBS_LIB NAMES IotJobs-cpp PATHS "${AWS_INSTALL_DIR}/lib" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
+find_library(AWS_IOT_IDENTITY_LIB NAMES IotIdentity-cpp PATHS "${AWS_INSTALL_DIR}/lib" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
+find_library(AWS_IOT_COMMON_LIB NAMES IotDeviceCommon-cpp PATHS "${AWS_INSTALL_DIR}/lib" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
+
+
+# TFLite
+add_library(libtflite SHARED IMPORTED)
+set_target_properties(libtflite PROPERTIES
+    IMPORTED_LOCATION "${TF_BAZEL_BIN}/tensorflow/lite/libtensorflowlite.so"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src"
 )
 
-find_library(AWS_IOT_SHADOW_LIB
-    NAMES IotShadow-cpp
-    PATHS "${AWS_INSTALL_DIR}/lib"
-    REQUIRED
-)
+# -----------------------------------------------------------------------------
+# 2. BUILD TARGET
+# -----------------------------------------------------------------------------
+add_executable(rpi_vision src/main.cpp src/Config.cpp)
 
-find_library(AWS_IOT_COMMANDS_LIB
-    NAMES IotCommands-cpp
-    PATHS "${AWS_INSTALL_DIR}/lib"
-    REQUIRED
-)
-
-find_library(AWS_IOT_JOBS_LIB
-    NAMES IotJobs-cpp
-    PATHS "${AWS_INSTALL_DIR}/lib"
-    REQUIRED
-)
-
-find_library(AWS_IOT_IDENTITY_LIB
-    NAMES IotIdentity-cpp
-    PATHS "${AWS_INSTALL_DIR}/lib"
-    REQUIRED
-)
-
-find_library(AWS_IOT_COMMON_LIB
-    NAMES IotDeviceCommon-cpp
-    PATHS "${AWS_INSTALL_DIR}/lib"
-    REQUIRED
-)
-
-set(AWS_IOT_INCLUDE_DIRS
+target_include_directories(rpi_vision PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
     "${AWS_INSTALL_DIR}/include"
 )
 
-# C) TENSORFLOW LITE 
-set(TF_SRC "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/tensorflow_src")
-
-add_library(libtflite SHARED IMPORTED)
-
-set_target_properties(libtflite PROPERTIES
-    IMPORTED_LOCATION "${TF_SRC}/bazel-bin/tensorflow/lite/libtensorflowlite.so"
-    INTERFACE_INCLUDE_DIRECTORIES "${TF_SRC};${TF_SRC}/bazel-tensorflow_src/external/flatbuffers/include"
-)
-
-# -----------------------------------------------------------------------------
-# 3. BUILD TARGET
-# -----------------------------------------------------------------------------
-add_executable(rpi_vision
-    src/main.cpp
-    src/Config.cpp
-)
-
-# -----------------------------------------------------------------------------
-# 4. INCLUDE DIRECTORIES
-# -----------------------------------------------------------------------------
-target_include_directories(rpi_vision PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${AWS_IOT_INCLUDE_DIRS}
-)
-
-# -----------------------------------------------------------------------------
-# 5. LINK LIBRARIES
-# -----------------------------------------------------------------------------
-target_link_libraries(rpi_vision
-    PRIVATE
+target_link_libraries(rpi_vision PRIVATE
     ${OpenCV_LIBS}          
     Tesseract::libtesseract
-    Threads::Threads         
-    libtflite                
+    Threads::Threads        
+    libtflite               
     ${AWS_CRT_CPP_LIB}
     ${AWS_IOT_SHADOW_LIB}
     ${AWS_IOT_COMMANDS_LIB}
@@ -105,10 +65,17 @@ target_link_libraries(rpi_vision
     ${AWS_IOT_COMMON_LIB}
 )
 
-target_link_directories(rpi_vision PRIVATE
-    "${AWS_INSTALL_DIR}/lib"
+# -----------------------------------------------------------------------------
+# 3. INSTALL
+# -----------------------------------------------------------------------------
+# A. The Binary
+install(TARGETS rpi_vision DESTINATION .)
+# B. Manual Libs (AWS + TFLite)
+file(GLOB AWS_LIBS "${AWS_INSTALL_DIR}/lib/*.so*")
+install(FILES ${AWS_LIBS} DESTINATION .)
+install(FILES "${TF_BAZEL_BIN}/tensorflow/lite/libtensorflowlite.so" DESTINATION .)
+# C. VCPKG Libs (OpenCV/Tesseract)
+install(DIRECTORY "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/"
+        DESTINATION .
+        FILES_MATCHING PATTERN "*.so*"
 )
-# -----------------------------------------------------------------------------
-# 6. INSTALL
-# -----------------------------------------------------------------------------
-install(TARGETS rpi_vision DESTINATION bin)

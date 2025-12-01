@@ -3,25 +3,36 @@
   "configurePresets": [
     {
       "name": "linux-manual-debug",
-      "displayName": "Linux Debug (vcpkg + Manual SDKs)",
-      "generator": "Ninja", 
+      "displayName": "Linux Laptop Debug",
+      "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/linux-debug",
       "cacheVariables": {
-	"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_TARGET_TRIPLET": "x64-linux",
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_PREFIX_PATH": "${sourceDir}/dependencies/install-sdk" 
-      },
-      "warnings": {
-        "dev": false
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "rpi-release",
+      "displayName": "Raspberry Pi 4 Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/rpi-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "arm64-linux",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchain-rpi.cmake",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/deploy"
       }
     }
   ],
   "buildPresets": [
     {
-      "name": "linux-debug-build",
-      "displayName": "Build Debug",
+      "name": "laptop-debug",
       "configurePreset": "linux-manual-debug"
+    },
+    {
+      "name": "rpi-build",
+      "configurePreset": "rpi-release"
     }
   ]
 }
