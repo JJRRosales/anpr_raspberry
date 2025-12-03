@@ -18,7 +18,7 @@
       "binaryDir": "${sourceDir}/build/rpi-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "VCPKG_TARGET_TRIPLET": "arm64-linux",
+        "VCPKG_TARGET_TRIPLET": "arm64-linux-rpi",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchain-rpi4.cmake",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/deploy"
